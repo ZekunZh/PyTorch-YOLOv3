@@ -103,7 +103,7 @@ class ListDataset(Dataset):
         # Handles images with less than three channels
         if len(img.shape) != 3:
             img = np.repeat(img[..., np.newaxis], 3, axis=-1)
-            logger.info("image shape after repeat along channels: {}".format(img.shape))
+            # logger.info("image shape after repeat along channels: {}".format(img.shape))
 
         h, w, _ = img.shape
         dim_diff = np.abs(h - w)
@@ -124,7 +124,7 @@ class ListDataset(Dataset):
         #---------
         #  Label
         #---------
-        gt_boxes = self.roidb[image_idx]['boxes']
+        gt_boxes = self.roidb[image_idx]['boxes']   # [N, x_yolo, y_yolo, w_yolo, h_yolo]
         gt_classes = self.roidb[image_idx]['gt_classes'].reshape((-1, 1))
 
         labels = np.concatenate((gt_classes, gt_boxes), axis=1)
@@ -133,12 +133,13 @@ class ListDataset(Dataset):
         y1 = h * (labels[:, 2] - labels[:, 4]/2)
         x2 = w * (labels[:, 1] + labels[:, 3]/2)
         y2 = h * (labels[:, 2] + labels[:, 4]/2)
+
         # Adjust for added padding
         x1 += pad[1][0]
         y1 += pad[0][0]
         x2 += pad[1][0]
         y2 += pad[0][0]
-        # Calculate ratios from coordinates
+        # Calculate ratios from coordinates, relative values
         labels[:, 1] = ((x1 + x2) / 2) / padded_w
         labels[:, 2] = ((y1 + y2) / 2) / padded_h
         labels[:, 3] *= w / padded_w
@@ -158,13 +159,15 @@ class ListDataset(Dataset):
         width = entry['width']
         height = entry['height']
         for obj in objs:
-            # Convert from (x1, y1, w, h) to (x1, y1, x2, y2)
+            # Convert from (x1, y1, w, h) to (x_center/img_w, y_center/img_h, w/img_w, h/img_h)
             x1, y1, x2, y2 = box_utils.xywh_to_xyxy(obj['bbox'])
             x1, y1, x2, y2 = box_utils.clip_xyxy_to_image(
                 x1, y1, x2, y2, height, width
             )
+            x_yolo, y_yolo, w_yolo, h_yolo = box_utils.xyxy_to_xywh_yolo([x1, y1, x2, y2], height, width)
+
             if obj['area']>0 and x2>x1 and y2>y1:
-                obj['clean_bbox'] = [x1, y1, x2, y2]
+                obj['clean_bbox'] = [x_yolo, y_yolo, w_yolo, h_yolo]
                 valid_objs.append(obj)
         num_valid_objs = len(valid_objs)
         gt_boxes = np.zeros((num_valid_objs, 4), dtype=entry['boxes'].dtype)

@@ -22,7 +22,7 @@ import torch.optim as optim
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", type=int, default=16, help="size of each image batch")
 parser.add_argument("--model_config_path", type=str, default="config/yolov3.cfg", help="path to model config file")
-parser.add_argument("--data_config_path", type=str, default="config/coco.data", help="path to data config file")
+parser.add_argument("--data_config_path", type=str, default="config/radio.data", help="path to data config file")
 parser.add_argument("--weights_path", type=str, default="weights/yolov3.weights", help="path to weights file")
 parser.add_argument("--class_path", type=str, default="data/coco.names", help="path to class label file")
 parser.add_argument("--iou_thres", type=float, default=0.5, help="iou threshold required to qualify as detected")
@@ -109,7 +109,7 @@ for label in range(num_classes):
     scores = []
     num_annotations = 0
 
-    for i in tqdm.tqdm(range(len(all_annotations)), desc=f"Computing AP for class '{label}'"):
+    for i in tqdm.tqdm(range(len(all_annotations)), desc="Computing AP for class '{}'".format(label)):
         detections = all_detections[i][label]
         annotations = all_annotations[i][label]
 
@@ -159,7 +159,7 @@ for label in range(num_classes):
 
 print("Average Precisions:")
 for c, ap in average_precisions.items():
-    print(f"+ Class '{c}' - AP: {ap}")
+    print("+ Class '{}' - AP: {}".format(c, ap))
 
 mAP = np.mean(list(average_precisions.values()))
-print(f"mAP: {mAP}")
+print("mAP: {}".format(mAP))

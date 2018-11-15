@@ -119,6 +119,7 @@ class YOLOLayer(nn.Module):
         nA = self.num_anchors
         nB = x.size(0)
         nG = x.size(2)
+        # print("     x: {}".format(x.size()), flush=True)
         stride = self.image_dim / nG
 
         # Tensors for cuda support
@@ -173,7 +174,7 @@ class YOLOLayer(nn.Module):
 
             nProposals = int((pred_conf > 0.5).sum().item())
             recall = float(nCorrect / nGT) if nGT else 1
-            precision = float(nCorrect / nProposals)
+            precision = float(nCorrect / nProposals) if nProposals else 0
 
             # Handle masks
             mask = Variable(mask.type(ByteTensor))

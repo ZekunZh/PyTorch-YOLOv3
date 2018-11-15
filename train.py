@@ -158,32 +158,33 @@ for epoch in range(args.epochs):
 
         optimizer.zero_grad()
 
-        logger.info("batch imgs: {}".format(imgs.size()))
-        logger.info("batch targets: {}".format(targets.size()))
+        # logger.info("batch imgs: {}".format(imgs.size()))
+        # logger.info("batch targets: {}".format(targets.size()))
 
         loss = model(imgs, targets)
 
         loss.backward()
         optimizer.step()
 
-        logger.info(
-            "[Epoch %d/%d, Batch %d/%d] [Losses: x %f, y %f, w %f, h %f, conf %f, cls %f, total %f, recall: %.5f, precision: %.5f]"
-            % (
-                epoch,
-                args.epochs,
-                batch_i,
-                len(dataloader),
-                model.losses["x"],
-                model.losses["y"],
-                model.losses["w"],
-                model.losses["h"],
-                model.losses["conf"],
-                model.losses["cls"],
-                loss.item(),
-                model.losses["recall"],
-                model.losses["precision"],
+        if batch_i % 10 == 0:
+            logger.info(
+                "[Epoch %d/%d, Batch %d/%d] [Losses: x %f, y %f, w %f, h %f, conf %f, cls %f, total %f, recall: %.5f, precision: %.5f]"
+                % (
+                    epoch,
+                    args.epochs,
+                    batch_i,
+                    len(dataloader),
+                    model.losses["x"],
+                    model.losses["y"],
+                    model.losses["w"],
+                    model.losses["h"],
+                    model.losses["conf"],
+                    model.losses["cls"],
+                    loss.item(),
+                    model.losses["recall"],
+                    model.losses["precision"],
+                )
             )
-        )
 
         model.seen += imgs.size(0)
 

@@ -222,6 +222,9 @@ def build_targets(
             # Calculate iou between gt and anchor shapes
             anch_ious = bbox_iou(gt_box, anchor_shapes)
             # Where the overlap is larger than threshold set mask to zero (ignore)
+            print("anchor ious: {}".format(anch_ious), flush=True)
+            print("conf_mask: {}".format(conf_mask.size()), flush=True)
+
             conf_mask[b, anch_ious > ignore_thres, gj, gi] = 0
             # Find the best matching anchor box
             best_n = np.argmax(anch_ious)

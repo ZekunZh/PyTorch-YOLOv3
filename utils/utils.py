@@ -219,10 +219,6 @@ def build_targets(
             gt_box = torch.FloatTensor(np.array([0, 0, gw, gh])).unsqueeze(0)
             # Get shape of anchor box
             anchor_shapes = torch.FloatTensor(np.concatenate((np.zeros((len(anchors), 2)), np.array(anchors)), 1))
-            # print("     target: {}".format(target[b, t, ...]), flush=True)
-            # print("     gt_box: {}".format(gt_box), flush=True)
-            # print("     anchor_shapes: {}".format(anchor_shapes), flush=True)
-            # print("     anchors: {}".format(anchors), flush=True)
 
             # Calculate iou between gt and anchor shapes
             anch_ious = bbox_iou(gt_box, anchor_shapes)

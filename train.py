@@ -26,18 +26,18 @@ logging.getLogger('yolov3.train').setLevel(logging.INFO)
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--epochs", type=int, default=30, help="number of epochs")
+parser.add_argument("--epochs", type=int, default=1001, help="number of epochs")
 parser.add_argument("--image_folder", type=str, default="data/samples", help="path to dataset")
 parser.add_argument("--batch_size", type=int, default=16, help="size of each image batch")
-parser.add_argument("--model_config_path", type=str, default="config/yolov3.cfg", help="path to model config file")
+parser.add_argument("--model_config_path", type=str, default="config/radio.cfg", help="path to model config file")
 parser.add_argument("--data_config_path", type=str, default="config/radio.data", help="path to data config file")
-parser.add_argument("--weights_path", type=str, default="weights/yolov3.weights", help="path to weights file")
-parser.add_argument("--class_path", type=str, default="data/coco.names", help="path to class label file")
+parser.add_argument("--weights_path", type=str, default="weights/yolov3_official_pytorch.pth", help="path to weights file")
+parser.add_argument("--class_path", type=str, default="data/radio.names", help="path to class label file")
 parser.add_argument("--conf_thres", type=float, default=0.8, help="object confidence threshold")
 parser.add_argument("--nms_thres", type=float, default=0.4, help="iou thresshold for non-maximum suppression")
 parser.add_argument("--n_cpu", type=int, default=0, help="number of cpu threads to use during batch generation")
 parser.add_argument("--img_size", type=int, default=416, help="size of each image dimension")
-parser.add_argument("--checkpoint_interval", type=int, default=1, help="interval between saving model weights")
+parser.add_argument("--checkpoint_interval", type=int, default=1000, help="interval between saving model weights")
 parser.add_argument(
     "--checkpoint_dir", type=str, default="checkpoints", help="directory where model checkpoints are saved"
 )
@@ -66,81 +66,16 @@ burn_in = int(hyperparams["burn_in"])
 # Initiate model
 model = Darknet(args.model_config_path)
 model.apply(weights_init_normal)
-model.load_weights(args.weights_path)
+print(model)
+
+use_numpy = False
+model.load_weights(args.weights_path, from_numpy=use_numpy, change_num_classes=True)
+#model.save_weights("weights/yolov3_original.pth", as_numpy=False)
 
 if cuda:
     model = model.cuda()
 
 model.train()
-
-########################################################################
-# Prepare Dataset
-########################################################################
-# from datasets.roidb import combined_roidb_for_training
-# from roi_data.loader import RoiDataLoader, MinibatchSampler, BatchSampler, collate_minibatch
-# from core.config import cfg, cfg_from_file, cfg_from_list, assert_and_infer_cfg
-# from utils.timer import Timer
-
-#
-# if args.dataset.startswith("radio"):
-#     cfg.TRAIN.DATASETS = (args.dataset,)
-#     cfg.MODEL.NUM_CLASSES = 2
-# else:
-#     raise ValueError("Unexpected args.dataset: {}".format(args.dataset))
-# cfg_from_file(args.cfg_file)
-# if args.set_cfgs is not None:
-#     cfg_from_list(args.set_cfgs)
-#
-# ### Adaptively adjust some configs ###
-# original_batch_size = cfg.NUM_GPUS * cfg.TRAIN.IMS_PER_BATCH
-# original_ims_per_batch = cfg.TRAIN.IMS_PER_BATCH
-# original_num_gpus = cfg.NUM_GPUS
-# if args.batch_size is None:
-#     args.batch_size = original_batch_size
-# cfg.NUM_GPUS = torch.cuda.device_count()
-# assert (args.batch_size % cfg.NUM_GPUS) == 0, \
-#     'batch_size: %d, NUM_GPUS: %d' % (args.batch_size, cfg.NUM_GPUS)
-# cfg.TRAIN.IMS_PER_BATCH = args.batch_size // cfg.NUM_GPUS
-# effective_batch_size = args.iter_size * args.batch_size
-# logger.info('effective_batch_size = batch_size * iter_size = %d * %d' % (args.batch_size, args.iter_size))
-#
-# logger.info('Adaptive config changes:')
-# logger.info('    effective_batch_size: %d --> %d' % (original_batch_size, effective_batch_size))
-# logger.info('    NUM_GPUS:             %d --> %d' % (original_num_gpus, cfg.NUM_GPUS))
-# logger.info('    IMS_PER_BATCH:        %d --> %d' % (original_ims_per_batch, cfg.TRAIN.IMS_PER_BATCH))
-#
-# if args.n_cpu is not None:
-#     cfg.DATA_LOADER.NUM_THREADS = args.n_cpu
-# print('Number of data loading threads: %d' % cfg.DATA_LOADER.NUM_THREADS)
-#
-# timers = defaultdict(Timer)
-# timers['roidb'].tic()
-# roidb, ratio_list, ratio_index = combined_roidb_for_training(
-#     cfg.TRAIN.DATASETS, cfg.TRAIN.PROPOSAL_FILES)
-# timers['roidb'].toc()
-# roidb_size = len(roidb)
-# logger.info('{:d} roidb entries'.format(roidb_size))
-# logger.info('Takes %.2f sec(s) to construct roidb', timers['roidb'].average_time)
-#
-# # Effective training sample size for one epoch
-# train_size = roidb_size // args.batch_size * args.batch_size
-#
-# batchSampler = BatchSampler(
-#     sampler=MinibatchSampler(ratio_list, ratio_index),
-#     batch_size=args.batch_size,
-#     drop_last=True
-# )
-#
-# dataset = RoiDataLoader(
-#     roidb,
-#     cfg.MODEL.NUM_CLASSES,
-#     training=True)
-#
-# dataloader = torch.utils.data.DataLoader(
-#     dataset,
-#     batch_sampler=batchSampler,
-#     num_workers=cfg.DATA_LOADER.NUM_THREADS,
-#     collate_fn=collate_minibatch)
 
 # Get dataloader
 dataloader = torch.utils.data.DataLoader(
@@ -189,4 +124,4 @@ for epoch in range(args.epochs):
         model.seen += imgs.size(0)
 
     if epoch % args.checkpoint_interval == 0:
-        model.save_weights("%s/%d.weights" % (args.checkpoint_dir, epoch))
+        model.save_weights("%s/%d.weights" % (args.checkpoint_dir, epoch), as_numpy=use_numpy)

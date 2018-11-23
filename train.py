@@ -26,7 +26,7 @@ logging.getLogger('yolov3.train').setLevel(logging.INFO)
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--epochs", type=int, default=1001, help="number of epochs")
+parser.add_argument("--epochs", type=int, default=51, help="number of epochs")
 parser.add_argument("--image_folder", type=str, default="data/samples", help="path to dataset")
 parser.add_argument("--batch_size", type=int, default=16, help="size of each image batch")
 parser.add_argument("--model_config_path", type=str, default="config/radio.cfg", help="path to model config file")
@@ -37,7 +37,7 @@ parser.add_argument("--conf_thres", type=float, default=0.8, help="object confid
 parser.add_argument("--nms_thres", type=float, default=0.4, help="iou thresshold for non-maximum suppression")
 parser.add_argument("--n_cpu", type=int, default=0, help="number of cpu threads to use during batch generation")
 parser.add_argument("--img_size", type=int, default=416, help="size of each image dimension")
-parser.add_argument("--checkpoint_interval", type=int, default=1000, help="interval between saving model weights")
+parser.add_argument("--checkpoint_interval", type=int, default=10, help="interval between saving model weights")
 parser.add_argument(
     "--checkpoint_dir", type=str, default="checkpoints", help="directory where model checkpoints are saved"
 )
@@ -86,7 +86,17 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
 optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
 
-for epoch in range(args.epochs):
+# Get current epoch
+pattern = re.compile(r"(?<=/)\d{2,5}(?=\.weights)")
+res = pattern.search(args.weights_path)
+if res:
+    start_epoch = int(res.group(0)) + 1
+else:
+    start_epoch = 0
+
+print("     epoch starts from {} to {}".format(start_epoch, start_epoch + args.epochs))
+
+for epoch in range(start_epoch, start_epoch + args.epochs):
     for batch_i, (_, imgs, targets) in enumerate(dataloader):
         imgs = Variable(imgs.type(Tensor))
         targets = Variable(targets.type(Tensor), requires_grad=False)
@@ -106,7 +116,7 @@ for epoch in range(args.epochs):
                 "[Epoch %d/%d, Batch %d/%d] [Losses: x %f, y %f, w %f, h %f, conf %f, cls %f, total %f, recall: %.5f, precision: %.5f]"
                 % (
                     epoch,
-                    args.epochs,
+                    start_epoch + args.epochs,
                     batch_i,
                     len(dataloader),
                     model.losses["x"],

@@ -121,7 +121,7 @@ class YOLOLayer(nn.Module):
         nA = self.num_anchors
         nB = x.size(0)
         nG = x.size(2)
-        print("     x: {}".format(x.size()), flush=True)
+        # print("     x: {}".format(x.size()), flush=True)
         stride = self.image_dim / nG
 
         # Tensors for cuda support
